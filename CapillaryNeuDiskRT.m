@@ -1,23 +1,32 @@
+% Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
+% 
+% Compute capillary surfaces on the disk
+% with Neumann data, defined to be function gamma. 
+% Kappa is set according to the physical problem.
+%
+% This function needs Chebfun installed to run: chebfun.org
+% The dependencies on chebfun are restricted to the generation of the
+% spectral differentiation matrices and plotting.
+
+%% Physical parameters
+kappa = 1;
+% g = @(t) 0.1*sin(2*t).^2 + .5;
+gamma = @(t) (pi/2) + 0.75*sin(4*t);
+
+%% Computational Parameters
 N = 50;
 N2 = N/2;
 M1 = 80;
 M2 = M1/2;
-
-kappa = 1;
-g = @(t) 0.1*sin(2*t).^2 + .5;
-
-gamma = pi/3;
-gamma = @(t) pi/3 + 0.75*sin(6*t);
 
 new_tol = 1e-13;
 bvp_tol = 1e-10;
 ep = 1e-8;
 MM = 100;
 
-
+%% Computational building blocks
 r = chebpts(N);
 t = trigpts(M1, [-pi,pi]);
-
 R = diag(r(N2+1:N));
 
 Z = zeros(M2);
@@ -44,14 +53,15 @@ Dth = kron(D1t,eye(N2));
 Dthth = kron(D2t,eye(N2));
 Drth = Dr * Dth;
 
+% Initial guess
 u0 = ones(size(rr));
 % b = find(abs(rr)==1);
 b = find(rr==1);
-inside = find(abs(rr)~=1);
 % inside = find(rr~=1);
+inside = find(abs(rr)~=1);
 
-
-M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2 * rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) - kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+% M is minimal surface operator, it is the interior of Nu
+M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2 * rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 Nu = zeros(size(u0));
 Mu = M(u0);
 Mui = Mu(inside);
@@ -61,8 +71,10 @@ Drb = Dr*u0;
 Drb = Drb(b);
 Dthb = Dth*u0;
 Dthb = Dthb(b);
+% Nu(b) needs BMCing, possibly (Dr has been BMCed)
 Nu(b) = rr(b).*Drb - cos(gamma(tt(b))).*sqrt(rr(b).^2.*(1 + Drb.^2) + Dthb.^2);
 
+%% Solving the problem
 bvp_res = 1;
 count1 = 0;
 while((count1<MM) && (bvp_res > bvp_tol))
@@ -71,9 +83,9 @@ while((count1<MM) && (bvp_res > bvp_tol))
     z = spalloc(1, length(u0),1);
     while((count2 < MM) && (new_res > new_tol))
 
-        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 
-        F = @(v) rr.*((rr.^2) +(Dth*v).^2).*Drr + rr.*(1+(Dr*v).^2).*Dthth - 2*rr.*(Dr*v).*(Dth*v).*Drth + (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr + (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v) + 2*rr.*(Dth*v).*(Drr*v)).*Dth - kappa*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2).*eye(length(v))  - 3*kappa*v.*sqrt(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
+        F = @(v) rr.*((rr.^2) +(Dth*v).^2).*Drr + rr.*(1+(Dr*v).^2).*Dthth - 2*rr.*(Dr*v).*(Dth*v).*Drth + (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr + (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v) + 2*rr.*(Dth*v).*(Drr*v)).*Dth - kappa*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2).*eye(length(v))  - 3*kappa*v.*sqrt((rr.^2).*(1+(Dr*v))+(Dth.^2)).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
 
         Mu = M(u0);
         Mui = Mu(inside);
@@ -86,26 +98,19 @@ while((count1<MM) && (bvp_res > bvp_tol))
 
         L = F(u0);
 
-        L(b,:) = (rr(b) - cos(gamma(tt(b))).*rr(b).^2.*Drb./sqrt(rr(b).^2.*(1 + Drb.^2) + Dthb.^2) ).*Dr(b,:) - (cos(gamma(tt(b))).*Dthb./sqrt(rr(b).^2.*(1 + Drb.^2) + Dthb.^2)).*Dth(b,:);
+        
+        L(b,:) = (rr(b) - cos(gamma(tt(b))).*rr(b).^2.*Drb./sqrt(rr(b).^2.*(1 + Drb.^2) + Dthb.^2) ).*Dr(b,:) - cos(gamma(tt(b))).*Dthb./sqrt(rr(b).^2.*(1 + Drb.^2) + Dthb.^2).*Dth(b,:);
 
 
         du = -L\Nu;
-
+        % isreal(du)
         new_res = norm(du)/(norm(u0)+ep);
         u0 = u0+du;
-        
-        % uY = reshape(u0,N2,M1);
-        % Y = diskfun(uY);
-        % figure(20)
-        % surf(Y)
-        % pause
-        
-
         count2 = count2+1;
 
     end
 
-    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
@@ -164,7 +169,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
         % g = @(t) 0.1*sin(2*t).^2;
         %g = @(t) 0;
 
-        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
         Nu = zeros(size(u0));
         Mu = M(u0);
         Mui = Mu(inside);
@@ -177,21 +182,30 @@ while((count1<MM) && (bvp_res > bvp_tol))
     end
     count1 = count1 + 1;
 end
+
+%% Plotting
 % length(u0) - N*M1/2
 uu0 = reshape(u0,N2,M1);
+uu0 = real(uu0);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);
 [tt,rr] = meshgrid(t([M1 1:M1]),r(N2+1:N));
 [xx,yy] = pol2cart(tt,rr);
 
 % surf(xx,yy,uu0)
+Y = diskfun(real(uY));
 
-Y = diskfun(uY);
-
-% figure
-% plot(Y)
-figure
+figure(2)
 surf(Y)
-xlabel x
-ylabel y
-zlabel u
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal
+
+figure(3)
+contour(Y)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal

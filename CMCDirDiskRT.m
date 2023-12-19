@@ -1,16 +1,29 @@
+% Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
+% 
+% Compute constant mean curvature surfaces on the disk
+% with Dirichlet data, defined to be function gamma. 
+% Lambda is set according to the physical problem.
+%
+% This function needs Chebfun installed to run: chebfun.org
+% The dependencies on chebfun are restricted to the generation of the
+% spectral differentiation matrices and plotting.
+
+%% Physical parameters
+lambda = 0.5;
+gamma = @(t) 0.1*sin(2*t).^2;
+
+%% Computational parameters
 N = 50;
 N2 = N/2;
 M1 = 80;
 M2 = M1/2;
-
-lambda = 0.5;
 
 new_tol = 1e-13;
 bvp_tol = 1e-10;
 ep = 1e-8;
 MM = 100;
 
-
+%% Computational Building Blocks
 r = chebpts(N);
 t = trigpts(M1, [-pi,pi]);
 
@@ -40,18 +53,19 @@ Dth = kron(D1t,eye(N2));
 Dthth = kron(D2t,eye(N2));
 Drth = Dr * Dth;
 
+% Initial Guess
 u0 = zeros(size(rr));
 b = find(abs(rr)==1);
 inside = find(abs(rr)~=1);
-g = @(t) 0.1*sin(2*t).^2;
 
 M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 Nu = zeros(size(u0));
 Mu = M(u0);
 Mui = Mu(inside);
 Nu(inside) = Mui;
-Nu(b) = u0(b) - g(tt(b));
+Nu(b) = u0(b) - gamma(tt(b));
 
+%% Solving the problem
 bvp_res = 1;
 count1 = 0;
 while((count1<MM) && (bvp_res > bvp_tol))
@@ -67,7 +81,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b)-g(tt(b));
+        Nu(b) = u0(b)-gamma(tt(b));
         L = F(u0);
 
         for ii=1:length(b)
@@ -87,7 +101,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
-    Nu(b) = u0(b)-g(tt(b));
+    Nu(b) = u0(b)-gamma(tt(b));
 
     bvp_res = norm(Nu)/(norm(u0)+ep);
 
@@ -141,25 +155,41 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b) - g(tt(b));
+        Nu(b) = u0(b) - gamma(tt(b));
     end
     count1 = count1 + 1;
 end
+
+%% Plotting
 % length(u0) - N*M1/2
 uu0 = reshape(u0,N2,M1);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);
 [tt,rr] = meshgrid(t([M1 1:M1]),r(N2+1:N));
 [xx,yy] = pol2cart(tt,rr);
-
-surf(xx,yy,uu0)
-% isreal(uu0)
-figure
+% surf(xx,yy,uu0)
 Y = diskfun(uY);
-plot(Y)
-figure
-surf(Y)
-xlabel x
-ylabel y
-zlabel u
+% isreal(uu0)
 
+% figure(1)
+% plot(Y)
+% xlabel('X')
+% ylabel('Y')
+% zlabel('U')
+% axis equal
+
+figure(2)
+surf(Y)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal
+
+figure(3)
+contour(Y)
+% title('Contour Plot')
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal

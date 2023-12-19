@@ -1,8 +1,12 @@
 % Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
 % 
-% Compute minimal surfaces on the annulus with Dirichlet data. 
-% For the inner radius, r = a and the data is defined to be function ha.
-% For the outter radius, r = b and the data is defined to be function hb.
+% Compute minimal surfaces on the annulus with mixed
+% Dirichlet and Neumann data. 
+% For the inner radius, r = a and the data is defined to be function 
+% ha or agamma for Dirichlet or Neumann, respectively.
+% For the outter radius, r = b and the data is defined to be function
+% hb or bgamma for Dirichlet or Neumann, respectively.
+% Kappa is set according to the physical problem.
 %
 % This function needs Chebfun installed to run: chebfun.org
 % The dependencies on chebfun are restricted to the generation of the
@@ -12,6 +16,11 @@
 a = 1; 
 b = 2;
 
+% Neumann boundary functions
+agamma = @(t) pi/3 + 0.75*sin(6*t);
+bgamma = @(t) pi/3 + 0.75*cos(6*t);
+
+% Dirichlet boundary functions
 ha = @(t) 0.5 + 0.1*sin(2*t).^2;
 hb = @(t) 0.5 - 0.1*cos(2*t).^2;
 
@@ -58,7 +67,21 @@ Mu = M(u0);
 Mui = Mu(inside);
 Nu(inside) = Mui;
 
-Nu(ba) = u0(ba) - ha(tt(ba));
+% Neumann boundary data
+Drba = Dr*u0;
+Drba = Drba(ba);
+Dthba = Dth*u0;
+Dthba = Dthba(ba);
+Nu(ba) = rr(ba).*Drba + cos(agamma(tt(ba))).*sqrt(rr(ba).^2.*(1 + Drba.^2) + Dthba.^2);
+
+% Drbb = Dr*u0;
+% Drbb = Drbb(bb);
+% Dthbb = Dth*u0;
+% Dthbb = Dthbb(bb);
+% Nu(bb) = rr(bb).*Drbb - cos(bgamma(tt(bb))).*sqrt(rr(bb).^2.*(1 + Drbb.^2) + Dthbb.^2);
+
+% Dirichlet boundary data
+% Nu(ba) = u0(ba) - ha(tt(ba));
 Nu(bb) = u0(bb) - hb(tt(bb));
 
 %% Solving the problem
@@ -77,16 +100,35 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        
-        Nu(ba) = u0(ba) - ha(tt(ba));
+
+        % Neumann boundary data
+        Drba = Dr*u0;
+        Drba = Drba(ba);
+        Dthba = Dth*u0;
+        Dthba = Dthba(ba);
+        Nu(ba) = rr(ba).*Drba + cos(agamma(tt(ba))).*sqrt(rr(ba).^2.*(1 + Drba.^2) + Dthba.^2);
+
+        % Drbb = Dr*u0;
+        % Drbb = Drbb(bb);
+        % Dthbb = Dth*u0;
+        % Dthbb = Dthbb(bb);
+        % Nu(bb) = rr(bb).*Drbb - cos(bgamma(tt(bb))).*sqrt(rr(bb).^2.*(1 + Drbb.^2) + Dthbb.^2);
+
+        % Dirichlet boundary data
+        % Nu(ba) = u0(ba) - ha(tt(ba));
         Nu(bb) = u0(bb) - hb(tt(bb));
 
         L = F(u0);
 
-        for ii=1:length(ba)
-            L(ba(ii),:) = z;
-            L(ba(ii),ba(ii)) = 1;
-        end
+        % Neumann Frechet
+        L(ba,:) = (rr(ba) + cos(agamma(tt(ba))).*rr(ba).^2.*Drba./sqrt(rr(ba).^2.*(1 + Drba.^2) + Dthba.^2) ).*Dr(ba,:) + (cos(agamma(tt(ba))).*Dthba./sqrt(rr(ba).^2.*(1 + Drba.^2) + Dthba.^2)).*Dth(ba,:);
+        % L(bb,:) = (rr(bb) - cos(bgamma(tt(bb))).*rr(bb).^2.*Drbb./sqrt(rr(bb).^2.*(1 + Drbb.^2) + Dthbb.^2) ).*Dr(bb,:) - (cos(bgamma(tt(bb))).*Dthbb./sqrt(rr(bb).^2.*(1 + Drbb.^2) + Dthbb.^2)).*Dth(bb,:);
+
+        % Dirichlet Frechet
+        % for ii=1:length(ba)
+        %     L(ba(ii),:) = z;
+        %     L(ba(ii),ba(ii)) = 1;
+        % end
 
         for ii=1:length(bb)
             L(bb(ii),:) = z;
@@ -105,7 +147,21 @@ while((count1<MM) && (bvp_res > bvp_tol))
     Mui = Mu(inside);
     Nu(inside) = Mui;
 
-    Nu(ba) = u0(ba) - ha(tt(ba));
+    % Neumann boundary data
+    Drba = Dr*u0;
+    Drba = Drba(ba);
+    Dthba = Dth*u0;
+    Dthba = Dthba(ba);
+    Nu(ba) = rr(ba).*Drba + cos(agamma(tt(ba))).*sqrt(rr(ba).^2.*(1 + Drba.^2) + Dthba.^2);
+
+    % Drbb = Dr*u0;
+    % Drbb = Drbb(bb);
+    % Dthbb = Dth*u0;
+    % Dthbb = Dthbb(bb);
+    % Nu(bb) = rr(bb).*Drbb - cos(bgamma(tt(bb))).*sqrt(rr(bb).^2.*(1 + Drbb.^2) + Dthbb.^2);
+
+    % Dirichlet boundary data
+    % Nu(ba) = u0(ba) - ha(tt(ba));
     Nu(bb) = u0(bb) - hb(tt(bb));
 
     bvp_res = norm(Nu)/(norm(u0)+ep);
@@ -154,7 +210,21 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Mui = Mu(inside);
         Nu(inside) = Mui;
 
-        Nu(ba) = u0(ba) - ha(tt(ba));
+        % Neumann boundary data
+        Drba = Dr*u0;
+        Drba = Drba(ba);
+        Dthba = Dth*u0;
+        Dthba = Dthba(ba);
+        Nu(ba) = rr(ba).*Drba + cos(agamma(tt(ba))).*sqrt(rr(ba).^2.*(1 + Drba.^2) + Dthba.^2);
+
+        % Drbb = Dr*u0;
+        % Drbb = Drbb(bb);
+        % Dthbb = Dth*u0;
+        % Dthbb = Dthbb(bb);
+        % Nu(bb) = rr(bb).*Drbb - cos(bgamma(tt(bb))).*sqrt(rr(bb).^2.*(1 + Drbb.^2) + Dthbb.^2);
+
+        % Dirichlet boundary data
+        % Nu(ba) = u0(ba) - ha(tt(ba));
         Nu(bb) = u0(bb) - hb(tt(bb));
     end
     count1 = count1 + 1;
@@ -163,34 +233,17 @@ end
 %% Plotting
 % length(u0) - N*M1/2
 uu0 = reshape(u0,N,M1);
-
 % isreal(uu0)
-% uu0R = real(uu0);
-% uu0R = uu0R(:,[M1 1:M1]);
-
+% uu0 = real(uu0);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);
-
 [tt,rr] = meshgrid(t([M1 1:M1]),r);
 [xx,yy] = pol2cart(tt,rr);
 
-% isreal(xx)
-% isreal(yy)
-% isreal(uu0R)
-
 figure(1)
-Y = surf(xx,yy,uu0);
+surf(xx,yy,uu0)
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
-
-% isreal(surf(xx,yy,uu0))
-
-% figure(3)
-% contour(real(Y))
-% xlabel('X', 'FontWeight', 'bold')
-% ylabel('Y', 'FontWeight', 'bold')
-% fontsize("increase")
-% axis equal

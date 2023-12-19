@@ -174,23 +174,20 @@ uu0 = uu0(:,[M1 1:M1]);
 [tt,rr] = meshgrid(t([M1 1:M1]),r);
 [xx,yy] = pol2cart(tt,rr);
 
-% isreal(xx)
-% isreal(yy)
-% isreal(uu0R)
-
 figure(1)
-Y = surf(xx,yy,uu0);
+surf(xx,yy,uu0)
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
 
-% isreal(surf(xx,yy,uu0))
-
-% figure(3)
-% contour(real(Y))
-% xlabel('X', 'FontWeight', 'bold')
-% ylabel('Y', 'FontWeight', 'bold')
-% fontsize("increase")
-% axis equal
+figure(3)
+contour(xx,yy,uu0)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal
+hold on
+plot(a*cos(t([M1 1:M1])), a*sin(t([M1 1:M1])), 'k')
+plot(b*cos(t([M1 1:M1])), b*sin(t([M1 1:M1])), 'k')

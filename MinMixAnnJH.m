@@ -247,3 +247,13 @@ ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
+
+figure(3)
+contour(xx,yy,uu0)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal
+hold on
+plot(a*cos(t([M1 1:M1])), a*sin(t([M1 1:M1])), 'k')
+plot(b*cos(t([M1 1:M1])), b*sin(t([M1 1:M1])), 'k')

@@ -176,9 +176,12 @@ zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
 
-% isreal(uu0)
-%figure
-%Y = diskfun(uY);
-%plot(Y)
-%figure
-%surf(Y)
+figure(3)
+contour(xx,yy,uu0)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal
+hold on
+plot(a*cos(t([M1 1:M1])), a*sin(t([M1 1:M1])), 'k')
+plot(b*cos(t([M1 1:M1])), b*sin(t([M1 1:M1])), 'k')

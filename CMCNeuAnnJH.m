@@ -226,20 +226,12 @@ zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
 
-%% Contour plotting issue (unreal parts)
 figure(3)
-contour(surf(xx,yy,uu0))
-% title('Contour Plot')
+contour(xx,yy,uu0)
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
-
-%% Diskfun Plotting
-% Diskfun is not configured for the annulus
-% figure(2)
-% Y = diskfun(uY);
-% plot(Y)
-% 
-% figure(3)
-% surf(Y)
+hold on
+plot(a*cos(t([M1 1:M1])), a*sin(t([M1 1:M1])), 'k')
+plot(b*cos(t([M1 1:M1])), b*sin(t([M1 1:M1])), 'k')

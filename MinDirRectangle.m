@@ -1,6 +1,12 @@
-N = 30;
-x = chebpts(N);
-y = x;
+N = 45;
+aaa = -1;
+bbb = 1;
+% y between ccc and ddd
+ccc = -2;
+ddd = 2;
+x = chebpts(N,[aaa;bbb]);
+% y = x;
+y = chebpts(N,[ccc;ddd]);
 [xx,yy] = meshgrid(x,y);
 xx = xx(:);
 yy = yy(:);
@@ -10,18 +16,20 @@ ep = 1e-8;
 MM = 100;
 
 I = eye(N);
-D1 = diffmat(N,1);
-D2 = diffmat(N,2);
-Dx = kron(D1,I);
-Dxx = kron(D2,I);
-Dy = kron(I, D1);
-Dyy = kron(I, D2);
+Dx1 = diffmat(N,1,[aaa;bbb]);
+Dx2 = diffmat(N,2,[aaa;bbb]);
+Dy1 = diffmat(N,1,[ccc;ddd]);
+Dy2 = diffmat(N,2,[ccc;ddd]);
+Dx = kron(Dx1,I);
+Dxx = kron(Dx2,I);
+Dy = kron(I, Dy1);
+Dyy = kron(I, Dy2);
 Dxy = Dx * Dy;
 Dyx = Dy * Dx;
 
 u0 = ones(size(xx));
-b = find(abs(xx)==1 | abs(yy)==1);
-inside = find(abs(xx)~=1 & abs(yy)~=1);
+b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
+inside = find(xx ~= aaa & xx ~= bbb & yy ~= ccc & yy ~= ddd);
 g = @(x,y) 0.1*(sin(4*pi*x)).^2 + 0.1*(sin(4*pi*y));
 
 M = @(v) (Dxx*v) + (Dyy*v) + (Dxx*v).*(Dy*v).^2 - ...
@@ -49,7 +57,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b)-g(xx(b),yy(b));
+        Nu(b) = u0(b) - g(xx(b),yy(b));
         L = F(u0);
         for ii=1:length(b)
             z = zeros(1,length(u0));
@@ -59,8 +67,8 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         %size(L)
         %size(Nu)
         du = -L\Nu;
-        new_res2 = (norm(du)) / (norm(u0)+ep);
-        u0 = u0+du;
+        new_res2 = norm(du) / (norm(u0)+ep);
+        u0 = u0 + du;
         count2 = count2 + 1;
 
     end
@@ -70,7 +78,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
-    Nu(b) = u0(b)-g(xx(b),yy(b));
+    Nu(b) = u0(b) - g(xx(b),yy(b));
 
     %     new_res2
     %         uu0 = reshape(u0, N, N);
@@ -110,26 +118,28 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
     %
     %
     %     bvp_res = (norm(Nub)) / (norm(u0b)+ep)
-    bvp_res = (norm(Nu)) / (norm(u0)+ep)
+    bvp_res = norm(Nu) / (norm(u0)+ep);
     %pause;
     if (bvp_res > bvp_tol)
 
         uu0 = reshape(u0, N, N);
-        uu0 = chebfun2(uu0);
+        uu0 = chebfun2(uu0, [aaa bbb ccc ddd]);
 
         N = N + 4;
         I = eye(N);
-        D1 = diffmat(N,1);
-        D2 = diffmat(N,2);
-        Dx = kron(D1,I);
-        Dxx = kron(D2,I);
-        Dy = kron(I, D1);
-        Dyy = kron(I, D2);
+        Dx1 = diffmat(N,1,[aaa;bbb]);
+        Dx2 = diffmat(N,2,[aaa;bbb]);
+        Dy1 = diffmat(N,1,[ccc;ddd]);
+        Dy2 = diffmat(N,2,[ccc;ddd]);
+        Dx = kron(Dx1,I);
+        Dxx = kron(Dx2,I);
+        Dy = kron(I, Dy1);
+        Dyy = kron(I, Dy2);
         Dxy = Dx * Dy;
         Dyx = Dy * Dx;
 
-        x = chebpts(N);
-        y = x;
+        x = chebpts(N,[aaa;bbb]);
+        y = chebpts(N,[ccc;ddd]);
         [xx,yy] = meshgrid(x,y);
 
         u0 = uu0(xx,yy);
@@ -137,8 +147,8 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         yy = yy(:);
         u0 = u0(:);
 
-        b = find(abs(xx)==1 | abs(yy)==1);
-        inside = find(abs(xx)~=1 & abs(yy)~=1);
+        b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
+        inside = find(xx ~= aaa & xx ~= bbb & yy ~= ccc & yy ~= ddd);
         %         g = xx(b).^2 + yy(b).^3;
 
         M = @(v) (Dxx*v) + (Dyy*v) + (Dxx*v).*(Dy*v).^2 - ...
@@ -146,7 +156,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b)-g(xx(b),yy(b));
+        Nu(b) = u0(b) - g(xx(b),yy(b));
     end
     count1 = count1 + 1;
 
@@ -155,5 +165,17 @@ end
 uu0 = reshape(u0, N, N);
 [xx,yy] = meshgrid(x,y);
 
-uu0 = chebfun2(uu0);
+uu0 = chebfun2(uu0, [aaa bbb ccc ddd]);
+figure(3)
 plot(uu0)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+axis equal
+
+figure(4)
+contour(xx,yy,uu0)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+fontsize("increase")

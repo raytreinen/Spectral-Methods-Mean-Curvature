@@ -12,8 +12,8 @@
 a = 1; 
 b = 2;
 
-ha = @(t) 0.5 + 0.1*sin(2*t).^2;
-hb = @(t) 0.5 - 0.1*cos(2*t).^2;
+ha = @(t) 1.28792; % 0.5 + 0.1*sin(2*t).^2;
+hb = @(t) 0; % 0.5 - 0.1*cos(2*t).^2;
 
 %% Computational parameters
 N = 50;

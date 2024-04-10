@@ -1,7 +1,7 @@
 % Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
-% 
+%
 % Compute constant mean curvature surfaces on the disk
-% with Dirichlet data, defined to be function gamma. 
+% with Dirichlet data, defined to be function gamma.
 % Lambda is set according to the physical problem.
 %
 % This function needs Chebfun installed to run: chebfun.org
@@ -10,7 +10,7 @@
 
 %% Physical parameters
 lambda = 0.5;
-gamma = @(t) 0.1*sin(2*t).^2;
+g = @(t) 0.1*sin(2*t).^2;
 
 %% Computational parameters
 N = 50;
@@ -58,12 +58,14 @@ u0 = zeros(size(rr));
 b = find(abs(rr)==1);
 inside = find(abs(rr)~=1);
 
-M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+    2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+    lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 Nu = zeros(size(u0));
 Mu = M(u0);
 Mui = Mu(inside);
 Nu(inside) = Mui;
-Nu(b) = u0(b) - gamma(tt(b));
+Nu(b) = u0(b) - g(tt(b));
 
 %% Solving the problem
 bvp_res = 1;
@@ -74,14 +76,20 @@ while((count1<MM) && (bvp_res > bvp_tol))
     z = spalloc(1, length(u0),1);
     while((count2 < MM) && (new_res > new_tol))
 
-        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 
-        F = @(v) rr.*((rr.^2) +(Dth*v).^2).*Drr + rr.*(1+(Dr*v).^2).*Dthth - 2*rr.*(Dr*v).*(Dth*v).*Drth + (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr + (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v)+ 2*rr.*(Dth*v).*(Drr*v)).*Dth  - 3*lambda*sqrt(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
+        F = @(v) rr.*((rr.^2) + (Dth*v).^2).*Drr + rr.*(1 + (Dr*v).^2).*Dthth -...
+            2*rr.*(Dr*v).*(Dth*v).*Drth + ...
+            (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1 + 3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr +...
+            (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v) + 2*rr.*(Dth*v).*(Drr*v)).*Dth -...
+            3*lambda*sqrt((rr.^2).*(1 + (Dr*v)) + (Dth.^2)).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
 
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b)-gamma(tt(b));
+        Nu(b) = u0(b)-g(tt(b));
         L = F(u0);
 
         for ii=1:length(b)
@@ -97,11 +105,13 @@ while((count1<MM) && (bvp_res > bvp_tol))
 
     end
 
-    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+        2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+        lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
-    Nu(b) = u0(b)-gamma(tt(b));
+    Nu(b) = u0(b)-g(tt(b));
 
     bvp_res = norm(Nu)/(norm(u0)+ep);
 
@@ -150,12 +160,14 @@ while((count1<MM) && (bvp_res > bvp_tol))
         % g = @(t) 0.1*sin(2*t).^2;
         %g = @(t) 0;
 
-        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).^(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
         Nu = zeros(size(u0));
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b) - gamma(tt(b));
+        Nu(b) = u0(b) - g(tt(b));
     end
     count1 = count1 + 1;
 end
@@ -184,7 +196,7 @@ xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
-axis equal
+% axis equal
 
 figure(3)
 contour(Y)

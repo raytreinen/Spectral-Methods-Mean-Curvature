@@ -1,22 +1,26 @@
-% Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
-%
-% Compute capillary surfaces on the disk
-% with Dirichlet data, defined to be function gamma.
-% Kappa is set according to the physical problem.
+% Jonas Haug, Rachel Jewell, Ray Treinen, March 2024
+% 
+% Compute capillary surfaces on the annulus with Dirichlet data. 
+% For the inner radius, r = a and the data is defined to be function ha.
+% For the outter radius, r = b and the data is defined to be function hb.
+% Lambda is set according to the physical problem.
 %
 % This function needs Chebfun installed to run: chebfun.org
 % The dependencies on chebfun are restricted to the generation of the
 % spectral differentiation matrices and plotting.
 
 %% Physical parameters
+a = 1;
+b = 2;
+
 kappa = 1;
-g = @(t) 0.1*sin(3*t).^2 + 0.1*cos(t) + .5;
+
+ha = @(t) 0.5 + 0.1*sin(3*t).^2;
+hb = @(t) 0.5 - 0.1*cos(2*t).^2 + 0.1*sin(t);
 
 %% Computational parameters
 N = 50;
-N2 = N/2;
 M1 = 80;
-M2 = M1/2;
 
 new_tol = 1e-13;
 bvp_tol = 1e-10;
@@ -24,39 +28,32 @@ ep = 1e-8;
 MM = 100;
 
 %% Computational building blocks
-r = chebpts(N);
+r = chebpts(N, [a;b]);
 t = trigpts(M1, [-pi,pi]);
+R = diag(r);
 
-R = diag(r(N2+1:N));
-
-Z = zeros(M2);
-I = eye(M2);
-
-[tt,rr] = meshgrid(t,r(N2+1:N));
+[tt,rr] = meshgrid(t,r);
 rr = rr(:);
 tt = tt(:);
 
-D = diffmat(N, 1);
-D2 = diffmat(N, 2);
-D3 = D2(N2+1:N, N2:-1:1);
-D4 = D2(N2+1:N,N2+1:N);
-E3 = D(N2+1:N, N2:-1:1);
-E4 = D(N2+1:N,N2+1:N);
+D = diffmat(N, 1, [a;b]);
+D2 = diffmat(N, 2, [a;b]);
 
-Dr = kron([Z I; I Z],E3) + kron(eye(M1),E4);
-Drr = kron([Z I; I Z],D3) + kron(eye(M1),D4);
+Dr = kron(eye(M1),D);
+Drr = kron(eye(M1),D2);
 
 D1t = diffmat(M1, 1, 'periodic', [-pi,pi]);
 D2t = diffmat(M1, 2, 'periodic', [-pi,pi]);
 
-Dth = kron(D1t,eye(N2));
-Dthth = kron(D2t,eye(N2));
+Dth = kron(D1t,eye(N));
+Dthth = kron(D2t,eye(N));
 Drth = Dr * Dth;
 
 % Initial guess
-u0 = zeros(size(rr));
-b = find(abs(rr)==1);
-inside = find(abs(rr)~=1);
+u0 = ones(size(rr));
+ba = find(rr==a);
+bb = find(rr==b);
+inside = find((rr~=a)&(rr~=b));
 
 M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
     2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) -...
@@ -65,7 +62,9 @@ Nu = zeros(size(u0));
 Mu = M(u0);
 Mui = Mu(inside);
 Nu(inside) = Mui;
-Nu(b) = u0(b) - g(tt(b));
+
+Nu(ba) = u0(ba) - ha(tt(ba));
+Nu(bb) = u0(bb) - hb(tt(bb));
 
 %% Solving the problem
 bvp_res = 1;
@@ -77,7 +76,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
     while((count2 < MM) && (new_res > new_tol))
 
         M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
-            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
             kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 
         F = @(v) rr.*((rr.^2) + (Dth*v).^2).*Drr + rr.*(1 + (Dr*v).^2).*Dthth -...
@@ -90,16 +89,24 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b) - g(tt(b));
+        
+        Nu(ba) = u0(ba) - ha(tt(ba));
+        Nu(bb) = u0(bb) - hb(tt(bb));
+
         L = F(u0);
 
-        for ii=1:length(b)
-            L(b(ii),:) = z;
-            L(b(ii),b(ii)) = 1;
+        for ii=1:length(ba)
+            L(ba(ii),:) = z;
+            L(ba(ii),ba(ii)) = 1;
+        end
+
+        for ii=1:length(bb)
+            L(bb(ii),:) = z;
+            L(bb(ii),bb(ii)) = 1;
         end
 
         du = -L\Nu;
-        % isreal(du)
+
         new_res = norm(du)/(norm(u0)+ep);
         u0 = u0 + du;
         count2 = count2 + 1;
@@ -107,12 +114,14 @@ while((count1<MM) && (bvp_res > bvp_tol))
     end
 
     M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
-            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) -...
-            kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+        kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
-    Nu(b) = u0(b) - g(tt(b));
+
+    Nu(ba) = u0(ba) - ha(tt(ba));
+    Nu(bb) = u0(bb) - hb(tt(bb));
 
     bvp_res = norm(Nu)/(norm(u0)+ep);
 
@@ -122,71 +131,74 @@ while((count1<MM) && (bvp_res > bvp_tol))
 
         M1 = M1+10;
         N = N+10;
-        N2 = N/2;
 
-        r = chebpts(N);
+        r = chebpts(N, [a;b]);
         t = trigpts(M1, [-pi,pi]);
+        R = diag(r);
 
-        R = diag(r(N2+1:N));
-
-        Z = zeros(M2);
-        I = eye(M2);
-
-        [tt,rr] = meshgrid(t,r(N2+1:N));
+        [tt,rr] = meshgrid(t,r);
         rr = rr(:);
         tt = tt(:);
 
-        D = diffmat(N, 1);
-        D2 = diffmat(N, 2);
-        D3 = D2(N2+1:N, N2:-1:1);
-        D4 = D2(N2+1:N,N2+1:N);
-        E3 = D(N2+1:N, N2:-1:1);
-        E4 = D(N2+1:N,N2+1:N);
+        D = diffmat(N, 1, [a;b]);
+        D2 = diffmat(N, 2, [a;b]);
 
-        Dr = kron([Z I; I Z],E3) + kron(eye(M1),E4);
-        Drr = kron([Z I; I Z],D3) + kron(eye(M1),D4);
+        Dr = kron(eye(M1),D);
+        Drr = kron(eye(M1),D2);
 
         D1t = diffmat(M1, 1, 'periodic', [-pi,pi]);
         D2t = diffmat(M1, 2, 'periodic', [-pi,pi]);
 
-        Dth = kron(D1t,eye(N2));
-        Dthth = kron(D2t,eye(N2));
+        Dth = kron(D1t,eye(N));
+        Dthth = kron(D2t,eye(N));
         Drth = Dr * Dth;
 
-        % R = diag(r);
-
-        u0 = zeros(size(rr));
-        b = find(abs(rr)==1);
-        inside = find(abs(rr)~=1);
-        % g = @(t) 0.1*sin(2*t).^2;
-        %g = @(t) 0;
+        u0 = ones(size(rr));
+        ba = find(rr==a);
+        bb = find(rr==b);
+        inside = find((rr~=a)&(rr~=b));
 
         M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
-            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
             kappa*v.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
         Nu = zeros(size(u0));
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b) - g(tt(b));
+        
+        Nu(ba) = u0(ba) - ha(tt(ba));
+        Nu(bb) = u0(bb) - hb(tt(bb));
     end
     count1 = count1 + 1;
 end
 
 %% Plotting
 % length(u0) - N*M1/2
-uu0 = reshape(u0,N2,M1);
+% uu0 = reshape(u0,N,M1);
+% uu0 = real(uu0);
+% uY = uu0;
+% uu0 = uu0(:,[M1 1:M1]);
+% [tt,rr] = meshgrid(t([M1 1:M1]),r(N2+1:N));
+% [xx,yy] = pol2cart(tt,rr);
+% 
+% % surf(xx,yy,uu0)
+% 
+% Y = diskfun(real(uY));
+% 
+% % figure
+% % plot(Y)
+% figure
+% surf(Y)
+
+uu0 = reshape(u0,N,M1);
 uu0 = real(uu0);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);
-[tt,rr] = meshgrid(t([M1 1:M1]),r(N2+1:N));
+[tt,rr] = meshgrid(t([M1 1:M1]),r);
 [xx,yy] = pol2cart(tt,rr);
 
-% surf(xx,yy,uu0)
-Y = diskfun(real(uY));
-
-figure(2)
-surf(Y)
+figure(1)
+surf(xx,yy,uu0)
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
@@ -194,8 +206,11 @@ fontsize("increase")
 % axis equal
 
 figure(3)
-contour(Y)
+contour(xx,yy,uu0)
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 fontsize("increase")
 axis equal
+hold on
+plot(a*cos(t([M1 1:M1])), a*sin(t([M1 1:M1])), 'k')
+plot(b*cos(t([M1 1:M1])), b*sin(t([M1 1:M1])), 'k')

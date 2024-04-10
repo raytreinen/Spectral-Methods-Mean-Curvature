@@ -1,19 +1,22 @@
 % Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
 % 
-% Compute minimal surfaces on the annulus with Dirichlet data. 
+% Compute capillary surfaces on the annulus with Dirichlet data. 
 % For the inner radius, r = a and the data is defined to be function ha.
 % For the outter radius, r = b and the data is defined to be function hb.
+% Lambda is set according to the physical problem.
 %
 % This function needs Chebfun installed to run: chebfun.org
 % The dependencies on chebfun are restricted to the generation of the
 % spectral differentiation matrices and plotting.
 
 %% Physical parameters
-a = 1; 
+a = 1;
 b = 2;
 
-ha = @(t) 1.28792; % 0.5 + 0.1*sin(2*t).^2;
-hb = @(t) 0; % 0.5 - 0.1*cos(2*t).^2;
+kappa = 1;
+
+ha = @(t) 0.5 + 0.1*sin(2*t).^2;
+hb = @(t) 0.5 - 0.1*cos(2*t).^2;
 
 %% Computational parameters
 N = 50;
@@ -47,12 +50,13 @@ Dthth = kron(D2t,eye(N));
 Drth = Dr * Dth;
 
 % Initial guess
-u0 = zeros(size(rr));
+u0 = ones(size(rr));
 ba = find(rr==a);
 bb = find(rr==b);
 inside = find((rr~=a)&(rr~=b));
 
-M = @(v) rr.*(Drr*v).*(rr.^2 + (Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2);
+M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+    2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 Nu = zeros(size(u0));
 Mu = M(u0);
 Mui = Mu(inside);
@@ -70,9 +74,9 @@ while((count1<MM) && (bvp_res > bvp_tol))
     z = spalloc(1, length(u0),1);
     while((count2 < MM) && (new_res > new_tol))
 
-        M = @(v) rr.*(Drr*v).*(rr.^2 + (Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 
-        F = @(v) rr.*((rr.^2) + (Dth*v).^2).*Drr + rr.*(1 + (Dr*v).^2).*Dthth - 2*rr.*(Dr*v).*(Dth*v).*Drth + (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr + (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v)  + 2*rr.*(Dth*v).*(Drr*v)).*Dth;
+        F = @(v) rr.*((rr.^2) +(Dth*v).^2).*Drr + rr.*(1+(Dr*v).^2).*Dthth - 2*rr.*(Dr*v).*(Dth*v).*Drth + (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr + (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v) + 2*rr.*(Dth*v).*(Drr*v)).*Dth - kappa*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2).*eye(length(v))  - 3*kappa*v.*sqrt((rr.^2).*(1+(Dr*v))+(Dth.^2)).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
 
         Mu = M(u0);
         Mui = Mu(inside);
@@ -94,17 +98,18 @@ while((count1<MM) && (bvp_res > bvp_tol))
         end
 
         du = -L\Nu;
+        % isreal(du)
         new_res = norm(du)/(norm(u0)+ep);
         u0 = u0+du;
         count2 = count2+1;
 
     end
 
-    M = @(v) rr.*(Drr*v).*(rr.^2 + (Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2);
+    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
-
+    
     Nu(ba) = u0(ba) - ha(tt(ba));
     Nu(bb) = u0(bb) - hb(tt(bb));
 
@@ -118,8 +123,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
         N = N+10;
 
         r = chebpts(N, [a;b]);
-        t = trigpts(M1, [0;2*pi]);
-
+        t = trigpts(M1, [-pi,pi]);
         R = diag(r);
 
         [tt,rr] = meshgrid(t,r);
@@ -139,21 +143,17 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Dthth = kron(D2t,eye(N));
         Drth = Dr * Dth;
 
-        % R = diag(r);
-
-        u0 = zeros(size(rr));
+        u0 = ones(size(rr));
         ba = find(rr==a);
         bb = find(rr==b);
         inside = find((rr~=a)&(rr~=b));
-        % g = @(t) 0.1*sin(2*t).^2;
-        %g = @(t) 0;
 
-        M = @(v) rr.*(Drr*v).*(rr.^2 + (Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - kappa*v.*rr.*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
         Nu = zeros(size(u0));
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-
+        
         Nu(ba) = u0(ba) - ha(tt(ba));
         Nu(bb) = u0(bb) - hb(tt(bb));
     end
@@ -162,15 +162,26 @@ end
 
 %% Plotting
 % length(u0) - N*M1/2
+% uu0 = reshape(u0,N,M1);
+% uu0 = real(uu0);
+% uY = uu0;
+% uu0 = uu0(:,[M1 1:M1]);
+% [tt,rr] = meshgrid(t([M1 1:M1]),r(N2+1:N));
+% [xx,yy] = pol2cart(tt,rr);
+% 
+% % surf(xx,yy,uu0)
+% 
+% Y = diskfun(real(uY));
+% 
+% % figure
+% % plot(Y)
+% figure
+% surf(Y)
+
 uu0 = reshape(u0,N,M1);
-
-% isreal(uu0)
-% uu0R = real(uu0);
-% uu0R = uu0R(:,[M1 1:M1]);
-
+uu0 = real(uu0);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);
-
 [tt,rr] = meshgrid(t([M1 1:M1]),r);
 [xx,yy] = pol2cart(tt,rr);
 

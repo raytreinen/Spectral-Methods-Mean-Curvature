@@ -1,4 +1,4 @@
-% Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
+% Jonas Haug, Rachel Jewell, Ray Treinen, March 2024
 % 
 % Compute constant mean curvature surfaces on the annulus with Neumann data. 
 % For the inner radius, r = a and the data is defined to be function agamma.
@@ -13,10 +13,11 @@
 a = 1; 
 b = 2;
 
-agamma = @(t) pi/2 + 0.1*sin(4*t);
-bgamma = @(t) pi/2 + 0.1*cos(4*t);
+% agamma = @(t) pi/2 + 0.1*sin(4*t);
+% bgamma = @(t) pi/2 + 0.1*cos(4*t) - 0.1;
 
-kappa = 1;
+agamma = @(t) pi/2;
+bgamma = @(t) pi/2 - 0.001;
 
 %% Computational parameters
 N = 50;
@@ -30,13 +31,15 @@ MM = 100;
 %% Computational building blocks
 acg = @(t) cos(agamma(t));
 acgc = chebfun(acg,[0,2*pi]);
-aic = sum(acgc,0,2*pi);
-alambda = aic/pi;
+aic = a*sum(acgc,0,2*pi);
+% alambda = aic/pi
 
 bcg = @(t) cos(bgamma(t));
 bcgc = chebfun(bcg,[0,2*pi]);
-bic = sum(bcgc,0,2*pi);
-blambda = bic/pi;
+bic = b*sum(bcgc,0,2*pi);
+% blambda = bic/pi
+
+lambda = (bic - aic)/((b^2 - a^2)*pi)
 
 r = chebpts(N, [a;b]);
 t = trigpts(M1, [-pi,pi]);
@@ -61,12 +64,14 @@ Dthth = kron(D2t,eye(N));
 Drth = Dr * Dth;
 
 % Initial guess
-u0 = ones(size(rr));
+u0 = zeros(size(rr));
 ba = find(rr==a);
 bb = find(rr==b);
 inside = find((rr~=a)&(rr~=b));
 
-M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1 + (Dr*v).^2) - 2 * rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1 + (Dr*v).^2) + 2*(Dth*v).^2) - alambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 Nu = zeros(size(u0));
 Mu = M(u0);
 Mui = Mu(inside);
@@ -93,9 +98,15 @@ while((count1<MM) && (bvp_res > bvp_tol))
     z = spalloc(1, length(u0),1);
     while((count2 < MM) && (new_res > new_tol))
 
-        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - alambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
 
-        F = @(v) rr.*((rr.^2) +(Dth*v).^2).*Drr + rr.*(1+(Dr*v).^2).*Dthth - 2*rr.*(Dr*v).*(Dth*v).*Drth + (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr + (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v) + 2*rr.*(Dth*v).*(Drr*v)).*Dth - kappa*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2).*eye(length(v))  - 3*alambda*sqrt(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
+        F = @(v) rr.*((rr.^2) + (Dth*v).^2).*Drr + rr.*(1+(Dr*v).^2).*Dthth -...
+            2*rr.*(Dr*v).*(Dth*v).*Drth + ...
+            (2*rr.*(Dthth*v).*(Dr*v) - 2*rr.*(Dth*v).*(Drth*v) + rr.^2.*(1+3*(Dr*v).^2) + 2*(Dth*v).^2).*Dr +...
+            (4*(Dr*v).*(Dth*v) - 2*rr.*(Dr*v).*(Drth*v) + 2*rr.*(Dth*v).*(Drr*v)).*Dth -...
+            3*lambda*sqrt((rr.^2).*(1+(Dr*v))+(Dth.^2)).*(rr.^2.*(Dr*v).*Dr + (Dth*v).*Dth);
 
         Mu = M(u0);
         Mui = Mu(inside);
@@ -122,11 +133,18 @@ while((count1<MM) && (bvp_res > bvp_tol))
 
         new_res = norm(du)/(norm(u0)+ep);
         u0 = u0+du;
-        
-        % uY = reshape(u0,N2,M1);
-        % Y = diskfun(uY);
-        % figure(20)
-        % surf(Y)
+
+        Y0 = reshape(u0,N,M1);
+        Y0 = Y0(:,[M1 1:M1]);
+        [t0,r0] = meshgrid(t([M1 1:M1]),r);
+        [x0,y0] = pol2cart(t0,r0);
+
+        figure(20)
+        surf(x0,y0,Y0)
+        xlabel('X', 'FontWeight', 'bold')
+        ylabel('Y', 'FontWeight', 'bold')
+        zlabel('U', 'FontWeight', 'bold')
+        fontsize("increase")
         % pause
         
 
@@ -134,7 +152,9 @@ while((count1<MM) && (bvp_res > bvp_tol))
 
     end
 
-    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - alambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+    M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
     Mu = M(u0);
     Mui = Mu(inside);
     Nu(inside) = Mui;
@@ -189,7 +209,9 @@ while((count1<MM) && (bvp_res > bvp_tol))
         bb = find(rr==b);
         inside = find((rr~=a)&(rr~=b));
 
-        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) - 2 * rr .* (Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) - alambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
+        M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
+            2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
         Nu = zeros(size(u0));
         Mu = M(u0);
         Mui = Mu(inside);
@@ -224,7 +246,7 @@ xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
-axis equal
+% axis equal
 
 figure(3)
 contour(xx,yy,uu0)

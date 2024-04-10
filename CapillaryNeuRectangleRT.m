@@ -3,21 +3,21 @@ N = 40;
 aaa = -1;
 bbb = 1;
 % y between ccc and ddd
-ccc = -10;
-ddd = 10;
+ccc = -1;
+ddd = 1;
 x = chebpts(N,[aaa;bbb]);
 % y = x;
 y = chebpts(N,[ccc;ddd]);
 [xx,yy] = meshgrid(x,y);
 xx = xx(:);
 yy = yy(:);
-new_tol = 1e-12;
+new_tol = 1e-13;
 bvp_tol = 1e-10;
 ep = 1e-8;
 MM = 100;
 kappa = 1;
 
-gamma = pi/4 + 0.1; % 0.035;
+gamma = pi/4 + 0.035;
 cosg = cos(gamma);
 
 
@@ -34,6 +34,7 @@ Dxy = Dx * Dy;
 Dyx = Dy * Dx;
 
 u0 = ones(size(xx));
+% u0 = zeros(size(xx));
 [xxx,yyy] = meshgrid(x,y);
 % u0 = 2*sqrt(2) + 1/(2*sqrt(2)) - sqrt(8 - xxx.^2 - yyy.^2);
 % figure(3)
@@ -41,17 +42,7 @@ u0 = ones(size(xx));
 % pause
 u0 = u0(:);
 
-% b = find(abs(xx)==1 | abs(yy)==1);
-% bu = find(abs(xx)<1 | yy==1);
-% bd = find(abs(xx)<1 | yy==-1);
-% bl = find((xx)==-1 | abs(yy)<1);
-% br = find((xx)==1 | abs(yy)<1);
-% bur = find(xx==1 | yy==1);
-% bul = find(xx==-1 | yy==1);
-% bdr = find(xx==1 | yy==-1);
-% bdl = find(xx==-1 | yy==-1);
-
-b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
+% b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
 bu = find(aaa < xx & xx < bbb & yy == ddd);
 bd = find(aaa < xx & xx < bbb & yy== ccc);
 bl = find(xx == aaa & ccc < yy & yy < ddd);
@@ -110,6 +101,7 @@ Dybdl = Dyu(bdl);
 %Nu(bdl) = Dxbdl + Dybdl + 2*sqrt(2)*cosg*sqrt(1 + Dxbdl.^2 + Dybdl.^2);
 Nu(bdl) = -Dxbdl - Dybdl - 2*cosg*sqrt(1 + Dxbdl.^2 + Dybdl.^2);
 
+tic
 bvp_res = 1;
 count1 = 0;
 while ((count1 < MM) && (bvp_res > bvp_tol))
@@ -284,7 +276,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         yy = yy(:);
         u0 = u0(:);
 
-        b = find(xx == aaa || xx == bbb || yy == ccc || yy == ddd);
+        % b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
         bu = find(aaa < xx & xx < bbb & yy == ddd);
         bd = find(aaa < xx & xx < bbb & yy== ccc);
         bl = find(xx == aaa & ccc < yy & yy < ddd);
@@ -346,6 +338,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
     count1 = count1 + 1;
 
 end
+toc
 
 uu0 = reshape(u0, N, N);
 [xx,yy] = meshgrid(x,y);

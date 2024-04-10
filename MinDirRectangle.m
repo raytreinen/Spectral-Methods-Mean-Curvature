@@ -1,9 +1,9 @@
-N = 45;
+N = 90;
 aaa = -1;
 bbb = 1;
 % y between ccc and ddd
-ccc = -2;
-ddd = 2;
+ccc = -1;
+ddd = 1;
 x = chebpts(N,[aaa;bbb]);
 % y = x;
 y = chebpts(N,[ccc;ddd]);
@@ -30,7 +30,7 @@ Dyx = Dy * Dx;
 u0 = ones(size(xx));
 b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
 inside = find(xx ~= aaa & xx ~= bbb & yy ~= ccc & yy ~= ddd);
-g = @(x,y) 0.1*(sin(4*pi*x)).^2 + 0.1*(sin(4*pi*y));
+g = @(x,y) 0.2*(sin(4*pi*x)).^2 + 0.1*(sin(4*pi*y));
 
 M = @(v) (Dxx*v) + (Dyy*v) + (Dxx*v).*(Dy*v).^2 - ...
     2*(Dx*v).*(Dy*v).*(Dxy*v) + (Dyy*v).*(Dx*v).^2;
@@ -172,10 +172,26 @@ xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
-axis equal
+% axis equal
+
+ugrad = sqrt((Dx*u0).^2 + (Dy*u0).^2);
+ugrad = reshape(ugrad,N,N);
+ugrad = chebfun2(ugrad,[aaa bbb ccc ddd]);
+figure(5)
+plot(ugrad)
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('Grad U', 'FontWeight', 'bold')
+fontsize("increase")
+
+[Mi, Miloc] = min2(ugrad);
+[Ma, Maloc] = max2(ugrad);
 
 figure(4)
 contour(xx,yy,uu0)
+hold on
+plot(Miloc(1),Miloc(2),'ok','MarkerSize',10)
+plot(Maloc(1),Maloc(2),'.k','MarkerSize',30)
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 fontsize("increase")

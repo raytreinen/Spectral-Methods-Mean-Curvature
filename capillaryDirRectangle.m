@@ -126,7 +126,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         Mu = M(u0);
         Mui = Mu(inside);
         Nu(inside) = Mui;
-        Nu(b) = u0(b)-g(xx(b),yy(b));
+        Nu(b) = u0(b) - g(xx(b),yy(b));
     end
     count1 = count1 + 1;
 

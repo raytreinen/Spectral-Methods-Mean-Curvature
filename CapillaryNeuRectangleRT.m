@@ -1,17 +1,17 @@
-N = 40;
+N = 55;
 % x between aaa and bbb
 aaa = -1;
 bbb = 1;
 % y between ccc and ddd
-ccc = -1;
-ddd = 1;
+ccc = -10;
+ddd = 10;
 x = chebpts(N,[aaa;bbb]);
 % y = x;
 y = chebpts(N,[ccc;ddd]);
 [xx,yy] = meshgrid(x,y);
 xx = xx(:);
 yy = yy(:);
-new_tol = 1e-13;
+new_tol = 1e-14;
 bvp_tol = 1e-10;
 ep = 1e-8;
 MM = 100;

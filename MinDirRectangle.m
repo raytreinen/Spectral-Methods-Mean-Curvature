@@ -1,4 +1,4 @@
-N = 90;
+N = 55;
 aaa = -1;
 bbb = 1;
 % y between ccc and ddd
@@ -30,7 +30,7 @@ Dyx = Dy * Dx;
 u0 = ones(size(xx));
 b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
 inside = find(xx ~= aaa & xx ~= bbb & yy ~= ccc & yy ~= ddd);
-g = @(x,y) 0.2*(sin(4*pi*x)).^2 + 0.1*(sin(4*pi*y));
+g = @(x,y) 0.1*(sin(4*pi*x)).^2 + 0.1*(sin(4*pi*y));
 
 M = @(v) (Dxx*v) + (Dyy*v) + (Dxx*v).*(Dy*v).^2 - ...
     2*(Dx*v).*(Dy*v).*(Dxy*v) + (Dyy*v).*(Dx*v).^2;
@@ -179,6 +179,7 @@ ugrad = reshape(ugrad,N,N);
 ugrad = chebfun2(ugrad,[aaa bbb ccc ddd]);
 figure(5)
 plot(ugrad)
+title('Grad u')
 xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('Grad U', 'FontWeight', 'bold')
@@ -186,6 +187,76 @@ fontsize("increase")
 
 [Mi, Miloc] = min2(ugrad);
 [Ma, Maloc] = max2(ugrad);
+
+uy =  1 + (Dy*u0).^2;
+uy = reshape(uy,N,N);
+uy = chebfun2(uy,[aaa bbb ccc ddd]);
+figure(10)
+plot(uy)
+title('1 + u_y')
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+
+[Mi, Miloc] = min2(uy);
+[Ma, Maloc] = max2(uy);
+
+ux =  1 + (Dx*u0).^2;
+ux = reshape(ux,N,N);
+ux = chebfun2(ux,[aaa bbb ccc ddd]);
+figure(11)
+plot(ux)
+title('1 + u_x')
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+
+[Mi, Miloc] = min2(ux);
+[Ma, Maloc] = max2(ux);
+
+umix = -2*(Dy*u0).*(Dx*u0);
+umix = reshape(umix,N,N);
+umix = chebfun2(umix,[aaa bbb ccc ddd]);
+figure(12)
+plot(umix)
+title('-2*u_x*u_y')
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+
+[Mi, Miloc] = min2(umix);
+[Ma, Maloc] = max2(umix);
+
+uyyfactor =  2*((Dyy*u0).*(Dx*u0) - (Dxy*u0).*(Dy*u0));
+uyyfactor = reshape(uyyfactor,N,N);
+uyyfactor = chebfun2(uyyfactor,[aaa bbb ccc ddd]);
+figure(13)
+plot(uyyfactor)
+title('2*((Dyy*u0).*ux - (Dxy*u0).*uy)')
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+
+[Mi, Miloc] = min2(uyyfactor);
+[Ma, Maloc] = max2(uyyfactor);
+
+uxxfactor =  2*((Dxx*u0).*(Dy*u0) - (Dxy*u0).*(Dx*u0));
+uxxfactor = reshape(uxxfactor,N,N);
+uxxfactor = chebfun2(uxxfactor,[aaa bbb ccc ddd]);
+figure(14)
+plot(uxxfactor)
+title('2*((Dyy*u0).*ux - (Dxy*u0).*uy)')
+xlabel('X', 'FontWeight', 'bold')
+ylabel('Y', 'FontWeight', 'bold')
+zlabel('U', 'FontWeight', 'bold')
+fontsize("increase")
+
+[Mi, Miloc] = min2(uxxfactor);
+[Ma, Maloc] = max2(uxxfactor);
 
 figure(4)
 contour(xx,yy,uu0)

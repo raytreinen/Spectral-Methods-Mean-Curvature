@@ -1,4 +1,4 @@
-N = 45;
+N = 55;
 aaa = -1;
 bbb = 1;
 % y between ccc and ddd

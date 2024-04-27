@@ -1,9 +1,9 @@
-N = 60;
+N = 55;
 aaa = -1;
 bbb = 1;
 % y between ccc and ddd
-ccc = -2;
-ddd = 2;
+ccc = -1;
+ddd = 1;
 x = chebpts(N,[aaa;bbb]);
 % y = x;
 y = chebpts(N,[ccc;ddd]);
@@ -142,7 +142,7 @@ xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
-axis equal
+% axis equal
 
 figure(4)
 contour(xx,yy,uu0)

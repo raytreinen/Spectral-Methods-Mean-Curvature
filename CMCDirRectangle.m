@@ -1,21 +1,40 @@
-N = 55;
+% Jonas Haug, Rachel Jewell, Ray Treinen, May 2024
+% 
+% Compute capillary surfaces on the rectangle with Dirichlet data. 
+% The rectangle is [aaa,bbb]x[ccc,ddd]
+% The Dirichlet data is given by g
+% kappa is set according to the physical problem.
+%
+% This function needs Chebfun installed to run: chebfun.org
+% The dependencies on chebfun are restricted to the generation of the
+% spectral differentiation matrices and plotting.
+
+%% Physical parameters
+
 aaa = -1;
 bbb = 1;
-% y between ccc and ddd
-ccc = -2;
-ddd = 2;
-x = chebpts(N,[aaa;bbb]);
-% y = x;
-y = chebpts(N,[ccc;ddd]);
-[xx,yy] = meshgrid(x,y);
-xx = xx(:);
-yy = yy(:);
+ccc = -1;
+ddd = 1;
+
+lambda = 1;
+
+g = @(x,y) 0.25*cos(pi*x/2).*sin(2*pi*x).^2 - 0.15*y.^2;
+
+%% Computational parameters
+N = 55;
+
 new_tol = 1e-14;
 bvp_tol = 1e-10;
 ep = 1e-8;
 MM = 100;
-%will start small, then increase 
-lambda = 1;
+
+%% Computational building blocks
+
+x = chebpts(N,[aaa;bbb]);
+y = chebpts(N,[ccc;ddd]);
+[xx,yy] = meshgrid(x,y);
+xx = xx(:);
+yy = yy(:);
 
 I = eye(N);
 Dx1 = diffmat(N,1,[aaa;bbb]);
@@ -29,12 +48,11 @@ Dyy = kron(I, Dy2);
 Dxy = Dx * Dy;
 Dyx = Dy * Dx;
 
+% Initial Guess
 u0 = zeros(size(xx));
+
 b = find(xx == aaa | xx == bbb | yy == ccc | yy == ddd);
 inside = find(xx ~= aaa & xx ~= bbb & yy ~= ccc & yy ~= ddd);
-g = @(x,y) 0.25*cos(pi*x/2).*sin(2*pi*x).^2 - 0.15*y.^2;% + 0.015*sin(4*pi*y);
-% g = @(x,y) 0.1*sin(2*pi*x).^2 + 0.1*sin(4*pi*y);
-% g = @(x,y) sqrt(x.^2 + .1*y.^2);
 
 M = @(v) (Dxx*v) + (Dyy*v) + (Dxx*v).*(Dy*v).^2 - ...
     2*(Dx*v).*(Dy*v).*(Dxy*v) + (Dyy*v).*(Dx*v).^2 - ...
@@ -45,6 +63,7 @@ Mui = Mu(inside);
 Nu(inside) = Mui;
 Nu(b) = u0(b) - g(xx(b),yy(b));
 
+%% Solving the problem
 bvp_res = 1;
 count1 = 0;
 while ((count1 < MM) && (bvp_res > bvp_tol))
@@ -74,7 +93,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
         end
         
         du = -L\Nu;
-        new_res = norm(du) / (norm(u0)+ep);
+        new_res = norm(du)/(norm(u0)+ep);
         u0 = u0 + du;
         count2 = count2 + 1;
     
@@ -88,7 +107,7 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
     Nu(inside) = Mui;
     Nu(b) = u0(b) - g(xx(b),yy(b));
     
-    bvp_res = norm(Nu) / (norm(u0)+ep);
+    bvp_res = norm(Nu)/(norm(u0) + ep);
     
     if (bvp_res > new_tol)
 
@@ -132,6 +151,8 @@ while ((count1 < MM) && (bvp_res > bvp_tol))
 
 end
 
+%% Plotting
+
 uu0 = reshape(u0, N, N);
 [xx,yy] = meshgrid(x,y);
 
@@ -142,7 +163,7 @@ xlabel('X', 'FontWeight', 'bold')
 ylabel('Y', 'FontWeight', 'bold')
 zlabel('U', 'FontWeight', 'bold')
 fontsize("increase")
-axis equal
+% axis equal
 
 figure(4)
 contour(xx,yy,uu0)

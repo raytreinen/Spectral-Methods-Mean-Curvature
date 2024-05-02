@@ -1,8 +1,7 @@
-% Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
+% Jonas Haug, Rachel Jewell, Ray Treinen, May 2024
 % 
 % Compute constant mean curvature surfaces on the disk
 % with Neumann data, defined to be function gamma. 
-% Kappa is set according to the physical problem.
 %
 % This function needs Chebfun installed to run: chebfun.org
 % The dependencies on chebfun are restricted to the generation of the
@@ -28,7 +27,7 @@ MM = 100;
 cg = @(t) cos(gamma(t));
 cgc = chebfun(cg,[0,2*pi]);
 ic = sum(cgc,0,2*pi);
-lambda = ic/pi
+lambda = ic/pi;
 
 r = chebpts(N);
 t = trigpts(M1, [-pi,pi]);
@@ -61,12 +60,9 @@ Drth = Dr * Dth;
 
 % Initial Guess
 u0 = ones(size(rr));
-%%% b = find(abs(rr)==1);
-% b = find(rr==1);
 b = find(rr==1 & tt~=0);
 b0 = find(rr==1 & tt==0);
 inside = find(abs(rr)~=1);
-% inside = find(rr~=1);
 
 M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
     2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
@@ -150,7 +146,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
     Nu(b) = rr(b).*Drb - cos(gamma(tt(b))).*sqrt(rr(b).^2.*(1 + Drb.^2) + Dthb.^2);
     Nu(b0) = u0(b0) - 1;
 
-    bvp_res = norm(Nu)/(norm(u0)+ep);
+    bvp_res = norm(Nu)/(norm(u0) + ep);
 
     if (bvp_res > bvp_tol)
         %         uu0 = reshape(u0,N,N);
@@ -189,19 +185,13 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Dthth = kron(D2t,eye(N2));
         Drth = Dr * Dth;
 
-        % R = diag(r);
-
         u0 = zeros(size(rr));
-        % b = find(abs(rr)==1);
         b = find(rr==1);
-        % inside = find(abs(rr)~=1);
         inside = find(rr~=1);
-        % g = @(t) 0.1*sin(2*t).^2;
-        %g = @(t) 0;
 
         M = @(v) rr.*(Drr*v).*(rr.^2+(Dth*v).^2) + rr.*(Dthth*v).*(1+(Dr*v).^2) -...
             2*rr.*(Dr*v).*(Dth*v).*(Drth *v) + (Dr*v).*(rr.^2.*(1+(Dr*v).^2)+2*(Dth*v).^2) -...
-            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);Nu = zeros(size(u0));
+            lambda*(rr.^2.*(1 + (Dr*v).^2) + (Dth*v).^2).^(3/2);
         Nu = zeros(size(u0));
         Mu = M(u0);
         Mui = Mu(inside);
@@ -218,7 +208,7 @@ while((count1<MM) && (bvp_res > bvp_tol))
 end
 
 %% Plotting
-% length(u0) - N*M1/2
+
 uu0 = reshape(u0,N2,M1);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);

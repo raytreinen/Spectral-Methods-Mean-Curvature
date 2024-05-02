@@ -1,4 +1,4 @@
-% Jonas Haug, Rachel Jewell, Ray Treinen, March 2024
+% Jonas Haug, Rachel Jewell, Ray Treinen, May 2024
 % 
 % Compute constant mean curvature surfaces on the annulus with mixed
 % Dirichlet and Neumann data. 
@@ -6,7 +6,7 @@
 % ha or agamma for Dirichlet or Neumann, respectively.
 % For the outter radius, r = b and the data is defined to be function
 % hb or bgamma for Dirichlet or Neumann, respectively.
-% Kappa is set according to the physical problem.
+% Lambda is set according to the physical problem.
 %
 % This function needs Chebfun installed to run: chebfun.org
 % The dependencies on chebfun are restricted to the generation of the
@@ -225,8 +225,6 @@ while((count1<MM) && (bvp_res > bvp_tol))
         Dthth = kron(D2t,eye(N));
         Drth = Dr * Dth;
 
-        % R = diag(r);
-
         u0 = zeros(size(rr));
         ba = find(rr==a);
         bb = find(rr==b);
@@ -259,7 +257,6 @@ while((count1<MM) && (bvp_res > bvp_tol))
 end
 
 %% Plotting
-% length(u0) - N*M1/2
 uu0 = reshape(u0,N,M1);
 uY = uu0;
 uu0 = uu0(:,[M1 1:M1]);

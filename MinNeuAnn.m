@@ -1,4 +1,4 @@
-% Jonas Haug, Rachel Jewell, Ray Treinen, December 2023
+% Jonas Haug, Rachel Jewell, Ray Treinen, May 2024
 %
 % Compute minimal surfaces on the annulus with Neumann data.
 % For the inner radius, r = a and the data is defined to be function
@@ -18,9 +18,6 @@ b = 2;
 agamma = @(t) pi/2 + 0.1*sin(2*t);
 bgamma = @(t) pi/2 + 0.01*cos(4*t);
 
-% Dirichlet boundary functions
-% ha = @(t) 0.5 + 0.1*sin(2*t).^2;
-% hb = @(t) 0.5 - 0.1*cos(2*t).^2;
 
 %% Computational parameters
 N = 50;
@@ -55,6 +52,7 @@ Drth = Dr * Dth;
 
 % Initial guess
 u0 = zeros(size(rr));
+
 ba = find(rr==a);
 bb = find(rr==b & tt~=0);
 bb0 = find(rr==b & tt==0);

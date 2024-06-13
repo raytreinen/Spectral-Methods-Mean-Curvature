@@ -1,5 +1,7 @@
 # Spectral-Methods-Mean-Curvature
 
+This file corresponds to the paper "Spectral methods for prescribed mean curvature equations" by Jonas Haug, Rachel Jewell, and Ray Treinen.
+
 General information on the programs:
 We treat minimal surface, constant mean curvature surface, and capillary surface problems with Dirichlet boundary conditions and the nonlinear Neumann conditions known as capillary data on the domains of the rectangle, disk, and annulus.
 The files are organized by a naming convention.  The following examples of names are sufficient to explain the codes in this directory.  MinDirAnn.m is a solver for a minimal surface with Dirichlet boundary data on the annulus.  CapillaryNeuRectangle.m is a solver for a capillary surface with nonlinear Neumann data on the rectangle.  CMCDirDisk.m is a solver for a CMC surface with Dirichlet data on the disk.
